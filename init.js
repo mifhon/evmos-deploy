@@ -108,9 +108,9 @@ let init = async function () {
       data = await fs.readFile(appConfigPath, "utf8")
       data = data.replace("tcp://0.0.0.0:1317", `tcp://0.0.0.0:${swaggerPort + i}`)
       data = data.replace("swagger = false", `swagger = true`)
-      data = data.replace("enabled-unsafe-cors = false", `enabled-unsafe-cors = true`)
-      data = data.replace("enable = false", `enable = true`)
-      data = data.replace(":8080", `:${rosettaPort + i}`)
+      data = data.replaceAll("enabled-unsafe-cors = false", `enabled-unsafe-cors = true`)
+      // data = data.replaceAll("enable = false", `enable = true`) // on rosetta enable is false, and we need is false
+      // data = data.replace(":8080", `:${rosettaPort + i}`)
       data = data.replace("0.0.0.0:9090", `0.0.0.0:${grpcPort - i}`)
       data = data.replace("0.0.0.0:9091", `0.0.0.0:${grpcWebPort + i}`)
       data = data.replace("0.0.0.0:8545", `0.0.0.0:${jsonRpcPort - i}`)
@@ -120,11 +120,11 @@ let init = async function () {
 
       const configPath = path.join(nodesDir, `node${i}/evmosd/config/config.toml`)
       const rpcServerPort = 16657
-      const p2pPort = 10106
+      const p2pPort = 10000
       const pprofPort = 6060
       data = await fs.readFile(configPath, "utf8")
       data = data.replace("0.0.0.0:26657", `0.0.0.0:${rpcServerPort + i}`)
-      data = data.replace("cors_allowed_origins = []", `cors_allowed_origins = ["*"]`)
+      data = data.replaceAll("cors_allowed_origins = []", `cors_allowed_origins = ["*"]`)
       data = data.replace("tcp://0.0.0.0:26656", `tcp://0.0.0.0:${p2pPort + i}`)
       data = data.replace("localhost:6060", `localhost:${pprofPort + i}`)
       data = data.replace("40f4fac63da8b1ce8f850b0fa0f79b2699d2ce72@seed.evmos.jerrychong.com:26656,e3e11fca4ecf4035a751f3fea90e3a821e274487@bd-evmos-mainnet-seed-node-01.bdnodes.net:26656,fc86e7e75c5d2e4699535e1b1bec98ae55b16826@bd-evmos-mainnet-seed-node-02.bdnodes.net:26656", ``)
