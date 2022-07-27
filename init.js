@@ -125,6 +125,7 @@ let init = async function () {
       data = await fs.readFile(configPath, "utf8")
       data = data.replace("0.0.0.0:26657", `0.0.0.0:${rpcServerPort + i}`)
       data = data.replaceAll("cors_allowed_origins = []", `cors_allowed_origins = ["*"]`)
+      data = data.replaceAll("allow_duplicate_ip = false", `allow_duplicate_ip = true`)
       data = data.replace("tcp://0.0.0.0:26656", `tcp://0.0.0.0:${p2pPort + i}`)
       data = data.replace("localhost:6060", `localhost:${pprofPort + i}`)
       data = data.replace("40f4fac63da8b1ce8f850b0fa0f79b2699d2ce72@seed.evmos.jerrychong.com:26656,e3e11fca4ecf4035a751f3fea90e3a821e274487@bd-evmos-mainnet-seed-node-01.bdnodes.net:26656,fc86e7e75c5d2e4699535e1b1bec98ae55b16826@bd-evmos-mainnet-seed-node-02.bdnodes.net:26656", ``)
