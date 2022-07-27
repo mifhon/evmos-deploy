@@ -48,7 +48,7 @@ const isStart = argv.start;
 const validators = argv.validators
 
 const platform = argv.platform ? argv.platform : process.platform
-console.log(argv, platform);
+console.log(JSON.stringify(argv));
 
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);

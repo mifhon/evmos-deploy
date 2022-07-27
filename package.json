@@ -17,9 +17,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@cosmjs/crypto": "^0.28.11",
+    "bip39": "^3.0.4",
+    "ed25519": "^0.0.5",
     "fs-extra": "^10.0.0",
-    "leveldown": "^6.1.0",
-    "levelup": "^5.1.1",
     "web3": "^1.5.0",
     "yargs": "^17.5.1"
   }
