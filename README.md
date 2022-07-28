@@ -39,7 +39,7 @@ In the development mode, if we verification of P2P, consensus algorithm and othe
 Based on the above requirements and current situation, on the basis of Testnet Command mode provided by the government, using JavaScript script to implement a command can start multiple nodes. It can run a multi node environment in a few seconds.
 
 ## How to use it
-* Install node.js and V16. X.
+* Install 16.x node.js.
 * Execute `npm i` installation dependencies in the project directory.
 * Put your compiled **evmosd** executable program in the project directory.
 * copy config.default.json content to the newly created file config.json. Update the configuration according to your requirements.
