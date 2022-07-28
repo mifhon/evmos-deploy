@@ -1,5 +1,4 @@
 {
-  "commonNode": 0,
   "swaggerPort": 1317,
   "rosettaPort": 8080,
   "grpcPort": 9090,
