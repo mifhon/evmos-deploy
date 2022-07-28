@@ -32,9 +32,23 @@
   * pprofPort +递增
 * 如果需要在初始化执行编译代码，最好是将项目放到evmos项目代码目录之后重命名为build目录，evmos项目的Git已经忽略了build目录的改动。
 
-## ToDo
-* 完善普通节点的创建
+## 问题
+* 在同一台机器下面运行多个节点，一定要将config.toml配置中的allow_duplicate_ip = false改为allow_duplicate_ip = true，否则多节点p2p无法连起来。详细可见:https://github.com/tendermint/tendermint/issues/6156,我将那段话复制过来：
+  ```
+  I've fixed this.
+  
+  Since all the p2p traffic was being routed through the nginx proxy server,
+  the ips in the peer connection were the same.
+  The proxy server was just using different sockets to connect to the tendermint node.
+  So, the new peers were being rejected.
+  
+  I fixed it by enabling AllowDuplicateIP in tm p2p config.
+  
+  Thank you for your time!
+  ```
 
+## ToDo
+* 提供普通节点的创建
 
 ## background
 In the development mode, if we verification of P2P, consensus algorithm and other modules generally need to run 4 nodes. It's official [Multi Node](https://docs.evmos.org/developers/localnet/multi_node.html) as well as [Testnet Command](https://docs.evmos.org/developers/localnet/testnet_cmd.html) These two ways run multi node. However, these two methods have the following disadvantages: Multi Node is actually built by docker, which is not very friendly to development. After the configuration of 4 nodes is created by Testnet Command, many ports use the same port number, which makes it unable to run. Moreover, this mode is started in the same process, and can not simulate the development env.
@@ -69,3 +83,6 @@ Based on the above requirements and current situation, on the basis of Testnet C
   * p2pPort: +increment
   * pprofPort: +incremental
 * If you want compiled code, it is best to put the project into the evmos project code directory and rename it to the **build** directory. The git of the evmos project has ignored the change of the build directory.
+
+## ToDo
+* Provides the creation of common nodes
