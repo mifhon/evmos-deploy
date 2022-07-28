@@ -94,7 +94,7 @@ let init = async function () {
     await fs.ensureDir(nodesDir);
     console.log("Folder nodes has been cleaned up");
     {
-      const initFiles = `${evmosd} testnet init-files --v ${validators} --output-dir ./nodes`
+      const initFiles = `./${evmosd} testnet init-files --v ${validators} --output-dir ./nodes`
       console.log(`Exec cmd: ${initFiles}`)
       const { stdout, stderr } = await exec(initFiles, { cwd: curDir });
       console.log(`init-files ${stdout}${stderr}\n`);
