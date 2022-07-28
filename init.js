@@ -7,7 +7,14 @@ let argv = yargs
     alias: 'nohup',
     demandOption: false,
     default: true,
-    describe: '启动脚本是否是nohup',
+    describe: 'Whether the startup script is nohup',
+    type: 'bool'
+  })
+  .option('c', {
+    alias: 'compile',
+    demandOption: false,
+    default: false,
+    describe: 'Whether compile code',
     type: 'bool'
   })
   .option('v', {
@@ -17,25 +24,18 @@ let argv = yargs
     describe: 'Number of validators to initialize the testnet with (default 4)',
     type: 'number'
   })
-  .option('c', {
-    alias: 'console',
-    demandOption: false,
-    default: false,
-    describe: '启动脚本是否是console',
-    type: 'bool'
-  })
   .option('p', {
     alias: 'platform',
     demandOption: false,
     default: "",
-    describe: '当前平台(darwin,linux,win32)',
+    describe: 'platform(darwin,linux,win32)',
     type: 'string'
   })
   .option('s', {
     alias: 'start',
     demandOption: false,
     default: false,
-    describe: '是否初始化立即启动',
+    describe: 'Whether after initialize immediate start',
     type: 'bool'
   })
   .number(['v'])
@@ -43,9 +43,10 @@ let argv = yargs
   .argv;
 
 const isNohup = argv.nohup;
-const isConsole = argv.console;
 const isStart = argv.start;
+const isCompile = argv.compile;
 const validators = argv.validators
+const nodesCount = validators
 
 const platform = argv.platform ? argv.platform : process.platform
 console.log(JSON.stringify(argv));
@@ -54,8 +55,6 @@ const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 const fs = require("fs-extra");
 const path = require("path");
-const Web3 = require("web3");
-const web3 = new Web3();
 const curDir = process.cwd();
 const nodesDir = path.join(curDir, "nodes");
 const evmosd = platform == "win32" ? "evmosd.exe" : "evmosd";
@@ -68,29 +67,35 @@ const sleep = (time) => {
 let init = async function () {
   try {
     // 读取配置文件
-    let config = await fs.readJson("./config.json");
-    let startRpcPort = config.startRpcPort;
-    let startP2pPort = config.startP2pPort;
-    let cmd = config.cmd;
+    let config;
+    try {
+      config = await fs.readJson("./config.json");
+    } catch (error) {
+      config = await fs.readJson("./config.default.json");
+    }
 
-    console.log("开始清理文件夹nodes");
     if (await fs.pathExists(scriptStop)) {
-      // console.log("尝试停止nodes目录下面的geth节点");
-      // await exec(scriptStop, { cwd: dir }) // 不管怎样先执行一下停止
-      // await sleep(300);
+      console.log("Try to stop the evmosd under the nodes directory");
+      await exec(scriptStop, { cwd: dir }) // Anyway, stop it first
+      await sleep(300);
     }
-    if (!fs.existsSync(evmosd)) {
-      console.log("开始重新编译evmosd...");
-      // let make = await exec("go run build/ci.go install ./cmd/geth", { cwd: path.join(cwd, "..", "..") }); // 重新编译
-      // console.log("evmosd编译完毕", make);
+    if (!fs.existsSync(evmosd) || isCompile) {
+      console.log("Start recompiling evmosd...");
+      let make = await exec("go build ../cmd/evmosd", { cwd: curDir });
+      console.log("evmosd compile finished", make);
     }
 
+    if (!fs.existsSync(evmosd)) {
+      console.log("evmosd Executable file does not exist");
+      return
+    }
+    console.log("Start cleaning up folder nodes");
     await fs.emptyDir(nodesDir);
     await fs.ensureDir(nodesDir);
-    console.log("文件夹nodes已清理完毕");
+    console.log("Folder nodes has been cleaned up");
     {
       const initFiles = `${evmosd} testnet init-files --v ${validators} --output-dir ./nodes`
-      console.log(`exec cmd: ${initFiles}`)
+      console.log(`Exec cmd: ${initFiles}`)
       const { stdout, stderr } = await exec(initFiles, { cwd: curDir });
       console.log(`init-files ${stdout}${stderr}\n`);
     }
@@ -99,18 +104,18 @@ let init = async function () {
     for (let i = 0; i < validators; i++) {
       let data;
       const appConfigPath = path.join(nodesDir, `node${i}/evmosd/config/app.toml`)
-      const swaggerPort = 1317
-      const rosettaPort = 8080
-      const grpcPort = 9090
-      const grpcWebPort = 9091
-      const jsonRpcPort = 8545
-      const wsRpcPort = 8546
+      const swaggerPort = config.swaggerPort || 1317
+      const rosettaPort = config.rosettaPort || 8080
+      const grpcPort = config.grpcPort || 9090
+      const grpcWebPort = config.grpcWebPort || 9091
+      const jsonRpcPort = config.jsonRpcPort || 8545
+      const wsRpcPort = config.wsRpcPort || 8546
       data = await fs.readFile(appConfigPath, "utf8")
       data = data.replace("tcp://0.0.0.0:1317", `tcp://0.0.0.0:${swaggerPort + i}`)
       data = data.replace("swagger = false", `swagger = true`)
       data = data.replaceAll("enabled-unsafe-cors = false", `enabled-unsafe-cors = true`)
       // data = data.replaceAll("enable = false", `enable = true`) // on rosetta enable is false, and we need is false
-      // data = data.replace(":8080", `:${rosettaPort + i}`)
+      data = data.replace(":8080", `:${rosettaPort + i}`)
       data = data.replace("0.0.0.0:9090", `0.0.0.0:${grpcPort - i}`)
       data = data.replace("0.0.0.0:9091", `0.0.0.0:${grpcWebPort + i}`)
       data = data.replace("0.0.0.0:8545", `0.0.0.0:${jsonRpcPort - i}`)
@@ -119,9 +124,9 @@ let init = async function () {
       await fs.writeFile(appConfigPath, data)
 
       const configPath = path.join(nodesDir, `node${i}/evmosd/config/config.toml`)
-      const rpcServerPort = 16657
-      const p2pPort = 10000
-      const pprofPort = 6060
+      const rpcServerPort = config.rpcServerPort || 26657
+      const p2pPort = config.p2pPort || 10000
+      const pprofPort = config.pprofPort || 6060
       data = await fs.readFile(configPath, "utf8")
       data = data.replace("0.0.0.0:26657", `0.0.0.0:${rpcServerPort + i}`)
       data = data.replaceAll("cors_allowed_origins = []", `cors_allowed_origins = ["*"]`)
@@ -136,54 +141,49 @@ let init = async function () {
       await fs.writeFile(configPath, data)
     }
 
-    /*
-        // 生成启动命令脚本
-        let vbsStart = platform == "win32" ? `set ws=WScript.CreateObject("WScript.Shell")\n` : `#!/bin/bash\n`;
-        let vbsStop = platform == "win32" ? `set ws=WScript.CreateObject("WScript.Shell")\n` : `#!/bin/bash\n`;
-        for (let i = 1; i <= nodesCount; i++) {
-          let httpPort = startRpcPort + i - 1;
-          let p2pPort = startP2pPort + i - 1;
-          let start1 = (platform == "win32" ? "" : "#!/bin/bash\n" + (isNohup ? "nohup " : "") + "./") + `${evmosd} --datadir ./node${i} --unlock ${keystores[i - 1].address} --miner.etherbase ${keystores[i - 1].address} --password ./pwd ${cmd} --ws.port ${httpPort} --http.port ${httpPort} --port ${p2pPort} ${i <= config.authorityNode || isMine ? `--mine --miner.threads 1` : ""}` + (isConsole ? " console" : "") + (isNohup ? ` >./node${i}/geth.log 2>&1 &` : "");
-          let start2 = (platform == "win32" ? "" : "#!/bin/bash\n./") + `${evmosd} --datadir ./node${i} --unlock ${keystores[i - 1].address} --miner.etherbase ${keystores[i - 1].address} --password ./pwd ${cmd} --ws.port ${httpPort} --http.port ${httpPort} --port ${p2pPort} ${i <= config.authorityNode || isMine ? `--mine --miner.threads 1` : ""}` + (isConsole ? " console" : "");
-          let stop = platform == "win32"
-            ? `@echo off
-    for /f "tokens=5" %%i in ('netstat -ano ^ | findstr 0.0.0.0:${httpPort}') do set PID=%%i
+    // 生成启动命令脚本
+    let vbsStart = platform == "win32" ? `set ws=WScript.CreateObject("WScript.Shell")\n` : `#!/bin/bash\n`;
+    let vbsStop = platform == "win32" ? `set ws=WScript.CreateObject("WScript.Shell")\n` : `#!/bin/bash\n`;
+    for (let i = 0; i < nodesCount; i++) {
+      let p2pPort = config.p2pPort + i;
+      let start = (platform == "win32" ? "" : "#!/bin/bash\n" + (isNohup ? "nohup " : "") + "./") + `${evmosd} start --home ./node${i}/evmosd/` + (isNohup ? ` >./evmos${i}.log 2>&1 &` : "");
+      let stop = platform == "win32"
+        ? `@echo off
+    for /f "tokens=5" %%i in ('netstat -ano ^ | findstr 0.0.0.0:${p2pPort}') do set PID=%%i
     taskkill /F /PID %PID%`
-            : platform == "linux" ? `pid=\`netstat -anp | grep :::${httpPort} | awk '{printf $7}' | cut -d/ -f1\`;
+        : platform == "linux" ? `pid=\`netstat -anp | grep :::${p2pPort} | awk '{printf $7}' | cut -d/ -f1\`;
     kill -15 $pid` :
-              `pid=\`lsof -i :${httpPort} | grep geth | grep LISTEN | awk '{printf $2}'|cut -d/ -f1\`;
+          `pid=\`lsof -i :${p2pPort} | grep evmosd | grep LISTEN | awk '{printf $2}'|cut -d/ -f1\`;
     if [ "$pid" != "" ]; then kill -15 $pid; fi`;
-          let startPath = path.join(nodesDir, `start${i}.` + (platform == "win32" ? "bat" : "sh"));
-          let stopPath = path.join(nodesDir, `stop${i}.` + (platform == "win32" ? "bat" : "sh"));
-          await fs.writeFile(startPath, platform == "win32" ? start2 : start1);
-          await fs.writeFile(stopPath, stop);
-    
-          if (platform == "win32") {
-            vbsStart += `ws.Run ".\\start${i}.bat",0\n`;
-            vbsStop += `ws.Run ".\\stop${i}.bat",0\n`;
-          } else {
-            vbsStart += `./start${i}.sh\n`;
-            vbsStop += `./stop${i}.sh\n`;
-    
-            await fs.chmod(startPath, 0o777);
-            await fs.chmod(stopPath, 0o777);
-          }
-        }
-        // 生成总的启动脚本
-        let startAllPath = path.join(nodesDir, `startAll.` + (platform == "win32" ? "vbs" : "sh"));
-        let stopAllPath = path.join(nodesDir, `stopAll.` + (platform == "win32" ? "vbs" : "sh"));
-        await fs.writeFile(startAllPath, vbsStart);
-        await fs.writeFile(stopAllPath, vbsStop);
-        if (!(platform == "win32")) {
-          await fs.chmod(startAllPath, 0o777);
-          await fs.chmod(stopAllPath, 0o777);
-        }
-    
-        if (isStart) {
-          console.log("启动文件夹nodes下面所有节点");
-          await exec(scriptStart, { cwd: nodesDir }) // 不管怎样先执行一下停止
-        }
-    */
+      let startPath = path.join(nodesDir, `start${i}.` + (platform == "win32" ? "bat" : "sh"));
+      let stopPath = path.join(nodesDir, `stop${i}.` + (platform == "win32" ? "bat" : "sh"));
+      await fs.writeFile(startPath, start);
+      await fs.writeFile(stopPath, stop);
+
+      if (platform == "win32") {
+        vbsStart += `ws.Run ".\\start${i}.bat",0\n`;
+        vbsStop += `ws.Run ".\\stop${i}.bat",0\n`;
+      } else {
+        vbsStart += `./start${i}.sh\n`;
+        vbsStop += `./stop${i}.sh\n`;
+        await fs.chmod(startPath, 0o777);
+        await fs.chmod(stopPath, 0o777);
+      }
+    }
+    // 生成总的启动脚本
+    let startAllPath = path.join(nodesDir, `startAll.` + (platform == "win32" ? "vbs" : "sh"));
+    let stopAllPath = path.join(nodesDir, `stopAll.` + (platform == "win32" ? "vbs" : "sh"));
+    await fs.writeFile(startAllPath, vbsStart);
+    await fs.writeFile(stopAllPath, vbsStop);
+    if (!(platform == "win32")) {
+      await fs.chmod(startAllPath, 0o777);
+      await fs.chmod(stopAllPath, 0o777);
+    }
+
+    if (isStart) {
+      console.log("Start all evmosd node under the folder nodes");
+      await exec(scriptStart, { cwd: nodesDir }) // 不管怎样先执行一下停止
+    }
   } catch (error) {
     console.log("error", error);
   }

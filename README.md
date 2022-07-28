@@ -10,7 +10,7 @@
 注意：目前只支持windows/linux系统。如果需要其他系统的，需要做一下适配。
 
 ## 使用步骤
-* 安装Node.js，安装v14.x版本。
+* 安装Node.js，安装v16.x版本。
 * 在项目目录执行npm install安装依赖。
 * 将你编译好的geth重命名为geth.exe放到项目根目录。
 * config.default.json为蓝本，将内容复制一份到新建的文件config.json里面。你更新一下配置。genesis中extraData与alloc我会进行覆盖。配置文件字段见后续说明。
