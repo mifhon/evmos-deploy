@@ -33,7 +33,7 @@
 * 如果需要在初始化执行编译代码，最好是将项目放到evmos项目代码目录之后重命名为build目录，evmos项目的Git已经忽略了build目录的改动。
 
 ## 问题
-* 在同一台机器下面运行多个节点，一定要将config.toml配置中的allow_duplicate_ip = false改为allow_duplicate_ip = true，否则多节点p2p无法连起来。详细可见:https://github.com/tendermint/tendermint/issues/6156,我将那段话复制过来：
+* 在同一台机器下面运行多个节点，一定要将config.toml配置中的allow_duplicate_ip = false改为allow_duplicate_ip = true，否则多节点p2p无法连起来。详细可见:https://github.com/tendermint/tendermint/issues/6156 我将那段话复制过来：
   ```
   I've fixed this.
   
