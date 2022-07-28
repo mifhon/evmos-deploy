@@ -76,7 +76,7 @@ let init = async function () {
 
     if (await fs.pathExists(scriptStop)) {
       console.log("Try to stop the evmosd under the nodes directory");
-      await exec(scriptStop, { cwd: dir }) // Anyway, stop it first
+      await exec(scriptStop, { cwd: nodesDir }) // Anyway, stop it first
       await sleep(300);
     }
     if (!fs.existsSync(evmosd) || isCompile) {
