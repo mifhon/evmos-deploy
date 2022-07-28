@@ -32,6 +32,9 @@
   * pprofPort +递增
 * 如果需要在初始化执行编译代码，最好是将项目放到evmos项目代码目录之后重命名为build目录，evmos项目的Git已经忽略了build目录的改动。
 
+## ToDo
+* 完善普通节点的创建
+
 
 ## background
 In the development mode, if we verification of P2P, consensus algorithm and other modules generally need to run 4 nodes. It's official [Multi Node](https://docs.evmos.org/developers/localnet/multi_node.html) as well as [Testnet Command](https://docs.evmos.org/developers/localnet/testnet_cmd.html) These two ways run multi node. However, these two methods have the following disadvantages: Multi Node is actually built by docker, which is not very friendly to development. After the configuration of 4 nodes is created by Testnet Command, many ports use the same port number, which makes it unable to run. Moreover, this mode is started in the same process, and can not simulate the development env.
