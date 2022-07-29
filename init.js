@@ -181,7 +181,6 @@ let init = async function () {
       const indexStart = data.indexOf(str)
       const indexEnd = data.indexOf(`"`, indexStart + str.length)
       let oldPeers = data.substring(indexStart + str.length, indexEnd)
-      console.log(i, oldPeers, indexStart, indexEnd)
       for (let j = 0; j < nodesCount && nodesCount > 1; j++) {
         if (i != j) {
           peers.push(`${nodeIds[j]}@127.0.0.1:${p2pPort + j}`)
