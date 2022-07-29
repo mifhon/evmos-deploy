@@ -8,12 +8,13 @@
 * 在项目目录执行npm i安装依赖。
 * 将你编译好的evmosd放到项目目录。
 * config.default.json为蓝本，将内容复制一份到新建的文件config.json里面。按照你的需求你更新一下配置。
-* 执行 node init.js --start true。除了 start 参数，其他参数如下：
-  * nohup 启动脚本是在后台用 nohup 启动，默认 true
-  * platform 当前平台(darwin,linux,win32)，默认空，不传通过process.platform获取
-  * start 初始化之后是否立即启动所有节点，默认 false
-  * validators 共识节点的个数，默认为 4 个
-  * compile 是否需要强制重新编译代码。注意：此模式需要该项目放到evmos项目代码目录。
+* 执行 `node init.js --start true`  或者 `node init.js --s true`。除了 start 参数，其他参数如下：
+  * nohup(简写为n) 启动脚本是在后台用 nohup 启动，默认 true
+  * platform(简写为p) 当前平台(darwin,linux,win32)，默认空，不传通过process.platform获取
+  * start(简写为s) 初始化之后是否立即启动所有节点，默认 false
+  * validators(简写为v) 共识节点的个数，默认为 4 个
+  * commonNode(简写为cn) 普节点的个数，默认为 0 个
+  * compile(简写为c) 是否需要强制重新编译代码。注意：此模式需要该项目放到evmos项目代码目录。
 * 执行 npm run start 启动所有节点。
 * 执行 npm run stop 停止所有节点。
 
@@ -60,12 +61,13 @@ Based on the above requirements and current situation, on the basis of Testnet C
 * Execute `npm i` installation dependencies in the project directory.
 * Put your compiled **evmosd** executable program in the project directory.
 * copy config.default.json content to the newly created file config.json. Update the configuration according to your requirements.
-* Execute `node init.js --start true`。In addition to the start parameter, other parameters are as follows：
-  * nohup: type is bool, startup script is started in the background with nohup, which is true by default
-  * platform: type is string, the current platform (Darwin, Linux, and Win32), which is empty by default and is not transferred to be obtained through process.platform
-  * start: type is bool, whether to start all nodes immediately after initialization. The default value is false
-  * validators: type is number, the number of consensus nodes of validators. The default value is 4
-  * compile: type is bool, recompile of evmos code to generate evmosd excutable program. Note: this pattern requires the project to be placed in the evmos project code directory.
+* Execute `node init.js --start true` or `node init.js --s true`。In addition to the start parameter, other parameters are as follows：
+  * nohup(alias n): type is bool, startup script is started in the background with nohup, which is true by default
+  * platform(alias p): type is string, the current platform (Darwin, Linux, and Win32), which is empty by default and is not transferred to be obtained through process.platform
+  * start(alias s): type is bool, whether to start all nodes immediately after initialization. The default value is false
+  * validators(alias v): type is number, the number of consensus nodes of validators. The default value is 4
+  * commonNode(alias cn): type is number, the number of common nodes. The default value is 0
+  * compile(alias c): type is bool, recompile of evmos code to generate evmosd excutable program. Note: this pattern requires the project to be placed in the evmos project code directory.
 * Execute `npm run start` (It's actually node start.js) to start all nodes.
 * Execute `npm run stop` (It's actually node stop.js) to stop all nodes.
 
@@ -83,6 +85,3 @@ Based on the above requirements and current situation, on the basis of Testnet C
   * p2pPort: +increment
   * pprofPort: +incremental
 * If you want compiled code, it is best to put the project into the evmos project code directory and rename it to the **build** directory. The git of the evmos project has ignored the change of the build directory.
-
-## ToDo
-* Provides the creation of common nodes

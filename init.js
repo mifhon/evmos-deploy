@@ -24,6 +24,13 @@ let argv = yargs
     describe: 'Number of validators to initialize the testnet with (default 4)',
     type: 'number'
   })
+  .option('cn', {
+    alias: 'commonNode',
+    demandOption: false,
+    default: 0,
+    describe: 'Number of common node to initialize the testnet with (default 0)',
+    type: 'number'
+  })
   .option('p', {
     alias: 'platform',
     demandOption: false,
@@ -39,14 +46,16 @@ let argv = yargs
     type: 'bool'
   })
   .number(['v'])
+  .number(['cn'])
   .boolean(['n', 'c', 's'])
   .argv;
 
 const isNohup = argv.nohup;
 const isStart = argv.start;
 const isCompile = argv.compile;
+const commonNode = argv.commonNode
 const validators = argv.validators
-const nodesCount = validators
+const nodesCount = validators + commonNode
 
 const platform = argv.platform ? argv.platform : process.platform
 console.log(JSON.stringify(argv));
@@ -55,11 +64,13 @@ const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 const fs = require("fs-extra");
 const path = require("path");
+import TenderKeys from './tenderKeys.js'
 const curDir = process.cwd();
 const nodesDir = path.join(curDir, "nodes");
 const evmosd = platform == "win32" ? "evmosd.exe" : "evmosd";
 const scriptStop = path.join(nodesDir, platform == "win32" ? "stopAll.vbs" : "stopAll.sh");
 const scriptStart = path.join(nodesDir, platform == "win32" ? "startAll.vbs" : "startAll.sh");
+const tenderKeys = new TenderKeys();
 const sleep = (time) => {
   return new Promise((resolve) => setTimeout(resolve, time));
 };
@@ -89,19 +100,48 @@ let init = async function () {
       console.log("evmosd Executable file does not exist");
       return
     }
+
+    if (validators < 1) {
+      console.log("validators >= 1");
+      return
+    }
+
     console.log("Start cleaning up folder nodes");
     await fs.emptyDir(nodesDir);
     await fs.ensureDir(nodesDir);
     console.log("Folder nodes has been cleaned up");
     {
-      const initFiles = `./${evmosd} testnet init-files --v ${validators} --output-dir ./nodes`
+      const initFiles = `./${evmosd} testnet init-files --v ${nodesCount} --output-dir ./nodes`
+      const initFilesValidator = `./${evmosd} testnet init-files --v ${validators} --output-dir ./nodes`
       console.log(`Exec cmd: ${initFiles}`)
       const { stdout, stderr } = await exec(initFiles, { cwd: curDir });
       console.log(`init-files ${stdout}${stderr}\n`);
+
+      if (commonNode > 0) {
+        for (let i = 0; i < validators; i++) {
+          await fs.remove(path.join(nodesDir, `node${i}`))
+        }
+        await fs.remove(path.join(nodesDir, `gentxs`))
+
+        // re init validator, and turn a validator node into a common node
+        await exec(initFilesValidator, { cwd: curDir });
+        const genesisPath = path.join(nodesDir, `node0/evmosd/config/genesis.json`)
+        for (let i = validators; i < nodesCount; i++) {
+          await fs.copy(genesisPath, path.join(nodesDir, `node${i}/evmosd/config/genesis.json`))
+        }
+      }
     }
 
     await fs.copy(evmosd, `./nodes/${evmosd}`);
-    for (let i = 0; i < validators; i++) {
+
+    let nodeIds = [];
+    for (let i = 0; i < nodesCount; i++) {
+      const nodeKey = await fs.readJSON(path.join(nodesDir, `node${i}/evmosd/config/node_key.json`))
+      const nodeId = tenderKeys.getBurrowAddressFromPrivKey(Buffer.from(nodeKey.priv_key.value, "base64").toString("hex"))
+      nodeIds.push(nodeId)
+    }
+
+    for (let i = 0; i < nodesCount; i++) {
       let data;
       const appConfigPath = path.join(nodesDir, `node${i}/evmosd/config/app.toml`)
       const swaggerPort = config.swaggerPort || 1317
@@ -134,9 +174,23 @@ let init = async function () {
       data = data.replace("tcp://0.0.0.0:26656", `tcp://0.0.0.0:${p2pPort + i}`)
       data = data.replace("localhost:6060", `localhost:${pprofPort + i}`)
       data = data.replace("40f4fac63da8b1ce8f850b0fa0f79b2699d2ce72@seed.evmos.jerrychong.com:26656,e3e11fca4ecf4035a751f3fea90e3a821e274487@bd-evmos-mainnet-seed-node-01.bdnodes.net:26656,fc86e7e75c5d2e4699535e1b1bec98ae55b16826@bd-evmos-mainnet-seed-node-02.bdnodes.net:26656", ``)
-      for (let j = 1; j <= validators; j++) {
-        const peer = `192.168.0.${j}:26656`
-        data = data.replace(peer, `127.0.0.1:${p2pPort + j - 1}`)
+
+      // replace persistent_peers
+      let peers = []
+      const str = `persistent_peers = "`
+      const indexStart = data.indexOf(str)
+      const indexEnd = data.indexOf(`"`, indexStart + str.length)
+      let oldPeers = data.substring(indexStart + str.length, indexEnd)
+      console.log(i, oldPeers, indexStart, indexEnd)
+      for (let j = 0; j < nodesCount && nodesCount > 1; j++) {
+        if (i != j) {
+          peers.push(`${nodeIds[j]}@127.0.0.1:${p2pPort + j}`)
+        }
+      }
+      if (oldPeers.length > 0) {
+        data = data.replace(oldPeers, peers.join())
+      } else {
+        data = data.replace(`persistent_peers = ""`, `persistent_peers = "${peers.join()}"`) // if validator == 1 && common node >= 1
       }
       await fs.writeFile(configPath, data)
     }
