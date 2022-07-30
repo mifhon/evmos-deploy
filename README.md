@@ -6,7 +6,7 @@
 ## 使用步骤
 * 安装Node.js，安装v16.x版本。
 * 在项目目录执行npm i安装依赖。
-* 将你编译好的evmosd放到项目目录。
+* 将你编译好的evmosd放到项目目录，或者到 https://github.com/evmos/evmos/releases 进行下载你需要的版本。
 * config.default.json为蓝本，将内容复制一份到新建的文件config.json里面。按照你的需求你更新一下配置。
 * 执行 `node init.js --start true`  或者 `node init.js --s true`。除了 start 参数，其他参数如下：
   * nohup(简写为n) 启动脚本是在后台用 nohup 启动，默认 true
@@ -59,7 +59,7 @@ Based on the above requirements and current situation, on the basis of Testnet C
 ## How to use it
 * Install 16.x node.js.
 * Execute `npm i` installation dependencies in the project directory.
-* Put your compiled **evmosd** executable program in the project directory.
+* Put your compiled **evmosd** executable program in the project directory, or to https://github.com/evmos/evmos/releases to download the version you need .
 * copy config.default.json content to the newly created file config.json. Update the configuration according to your requirements.
 * Execute `node init.js --start true` or `node init.js --s true`。In addition to the start parameter, other parameters are as follows：
   * nohup(alias n): type is bool, startup script is started in the background with nohup, which is true by default
