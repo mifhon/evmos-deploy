@@ -110,8 +110,8 @@ let init = async function () {
     await fs.ensureDir(nodesDir);
     console.log("Folder nodes has been cleaned up");
     {
-      const initFiles = `${platform !== "win32" ? "./" : ""}${evmosd} testnet init-files --v ${nodesCount} --output-dir ./nodes`;
-      const initFilesValidator = `${platform !== "win32" ? "./" : ""}${evmosd} testnet init-files --v ${validators} --output-dir ./nodes`;
+      const initFiles = `${platform !== "win32" ? "./" : ""}${evmosd} testnet init-files --v ${nodesCount} --output-dir ./nodes --keyring-backend test`;
+      const initFilesValidator = `${platform !== "win32" ? "./" : ""}${evmosd} testnet init-files --v ${validators} --output-dir ./nodes --keyring-backend test`;
       console.log(`Exec cmd: ${initFiles}`);
       const { stdout, stderr } = await exec(initFiles, { cwd: curDir });
       console.log(`init-files ${stdout}${stderr}\n`);
