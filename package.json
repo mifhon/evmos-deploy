@@ -18,6 +18,7 @@
   "license": "ISC",
   "dependencies": {
     "@cosmjs/crypto": "^0.28.11",
+    "axios": "^0.27.2",
     "bip39": "^3.0.4",
     "ed25519": "^0.0.5",
     "fs-extra": "^10.0.0",
